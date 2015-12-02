@@ -80,8 +80,14 @@ function create_tabs(n)
         }
 }
 
+
+
 BEGIN {
-        #sec_indents["part"]=-1
+        dlt_empty_lines="true"
+        cnt_empty_lines=0
+        prv_empty_lines=2
+
+        sec_indents["part"]=0
         sec_indents["chapter"]=0
         sec_indents["section"]=1
         sec_indents["subsection"]=2
@@ -93,6 +99,7 @@ BEGIN {
 
         cur_sec="-"
         cur_env="-"
+
         cur_sec_indent=0
         cur_env_indent=0
         cur_abs_indent=0
@@ -104,17 +111,16 @@ BEGIN {
         plain_line=trim($0)
 }
 
-plain_line ~ /^\\/ {
+plain_line ~ /^\\.+/ {
         cur_sec=filter_sec(plain_line)
 
         if (cur_sec != "-") {
                 cur_sec_indent=sec_indents[cur_sec]
-
-                cur_abs_indent=cur_sec_indent + cur_env_indent
+                
+                cur_abs_indent=(cur_sec_indent + cur_env_indent)
 
                 printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
-        }
-        else {
+        } else {
                 cur_env = filter_env(plain_line)
 
                 if (cur_env != "-") {
@@ -123,30 +129,39 @@ plain_line ~ /^\\/ {
 
                                 cur_env_indent+=env_indent
 
-                                cur_abs_indent=cur_sec_indent + cur_env_indent
-                        }
-                        else {
+                                cur_abs_indent=(cur_sec_indent + cur_env_indent)
+                        } else {
                                 cur_env_indent-=env_indent
 
-                                cur_abs_indent=cur_sec_indent + cur_env_indent
+                                cur_abs_indent=(cur_sec_indent + cur_env_indent)
 
                                 printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
                         }
-                }
-                else {
+                } else {
                         printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
                 }
         }
-
         next
+}
+
+dlt_empty_lines == "true" {
+        if (length(plain_line) == 0) {
+                cnt_empty_lines+=1
+
+                if (cnt_empty_lines > prv_empty_lines) {
+                        next
+                }
+        } else {
+                if (cnt_empty_lines > 0) {
+                        cnt_empty_lines=0
+                }
+        }
 }
 
 {
         printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
-
-        next
 }
 
 END {
-        #print(">> done <<")
+        
 }
