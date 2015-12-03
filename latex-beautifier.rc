@@ -1,0 +1,10 @@
+
+function valid_latex_file
+{
+        [[ -e "$1" ]]  [[ "$1" =~ .*\.tex$ ]]; return $?
+}
+
+function numeric
+{
+        [[ "$1" =~ ^[0-9]+$ ]]; return $?
+}
