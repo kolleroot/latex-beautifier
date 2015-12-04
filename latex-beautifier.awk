@@ -34,6 +34,11 @@ function filter_sec(line)
         
         if (match(line, /^\\subsubsection/)) return "subsubsection"
         
+        return "-"
+}
+
+function filter_par(line)
+{
         if (match(line, /^\\paragraph/)) return "paragraph"
         
         if (match(line, /^\\subparagraph/)) return "subparagraph"
@@ -84,11 +89,12 @@ function print_buffer(buffer, len)
 
 BEGIN {
         cur_sec="-"
+        cur_par="-"
         cur_env="-"
-        plain_line=""
 
         cur_sec_indent=0
-        cur_env_indent=0
+        cur_par_indent=0
+        cur_rel_env_indent=0
         cur_abs_indent=0
 
         env_buffer[0]=""
@@ -100,14 +106,18 @@ BEGIN {
         prv_empty_lines=_prv_empty_lines
         dlt_empty_lines=_dlt_empty_lines
 
-        env_indent=1
-        sec_indents["part"]=0
-        sec_indents["chapter"]=0
-        sec_indents["section"]=1
-        sec_indents["subsection"]=2
-        sec_indents["subsubsection"]=3
-        sec_indents["paragraph"]=4
-        sec_indents["subparagraph"]=5
+        abs_sec_indents["part"]=0
+        abs_sec_indents["chapter"]=0
+        abs_sec_indents["section"]=1
+        abs_sec_indents["subsection"]=2
+        abs_sec_indents["subsubsection"]=3
+
+        rel_par_indents["paragraph"]=1
+        rel_par_indents["subparagraph"]=2
+
+        rel_env_indent=1
+
+        plain_line=""
 }
 
 {
@@ -118,47 +128,58 @@ plain_line ~ /^\\.+/ {
         cur_sec=filter_sec(plain_line)
 
         if (cur_sec != "-") {
-                cur_sec_indent=sec_indents[cur_sec]
-                cur_abs_indent=(cur_sec_indent + cur_env_indent)
+                if (cur_par_indent > 0) cur_par_indent=0
+
+                cur_sec_indent=abs_sec_indents[cur_sec]
+                cur_abs_indent=(cur_sec_indent + cur_par_indent + cur_rel_env_indent)
 
                 printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
         } else {
-                cur_env=filter_env(plain_line)
+                cur_par=filter_par(plain_line)
 
-                if (cur_env != "-") {
-                        if (cur_env == "begin") {
-                                printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
+                if (cur_par != "-") {
+                        cur_par_indent=rel_par_indents[cur_par]
+                        cur_abs_indent=(cur_sec_indent + cur_par_indent + cur_rel_env_indent)
 
-                                cur_env_indent+=env_indent
-                                cur_abs_indent=(cur_sec_indent + cur_env_indent)
+                        printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
+                } else {
+                        cur_env=filter_env(plain_line)
 
-                                if (use_env_buffer) {
-                                        ebl_env_buffer=1
+                        if (cur_env != "-") {
+                                if (cur_env == "begin") {
+                                        printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
 
-                                        env_buffer[cnt_env_buffer++]=$0
-                                }
-                        } else {
-                                cur_env_indent-=env_indent
-                                cur_abs_indent=(cur_sec_indent + cur_env_indent)
+                                        cur_rel_env_indent+=rel_env_indent
+                                        cur_abs_indent=(cur_sec_indent + cur_par_indent + cur_rel_env_indent)
 
-                                printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
+                                        if (use_env_buffer) {
+                                                ebl_env_buffer=1
 
-                                if (use_env_buffer) {
-                                        env_buffer[cnt_env_buffer++]=$0
+                                                env_buffer[cnt_env_buffer++]=$0
+                                        }
+                                } else {
+                                        cur_rel_env_indent-=rel_env_indent
+                                        cur_abs_indent=(cur_sec_indent + cur_par_indent + cur_rel_env_indent)
 
-                                        if (cur_env_indent == 0) {
-                                                ebl_env_buffer=0
+                                        printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
 
-                                                print_buffer(env_buffer, cnt_env_buffer)
+                                        if (use_env_buffer) {
+                                                env_buffer[cnt_env_buffer++]=$0
 
-                                                cnt_env_buffer=0
+                                                if (cur_rel_env_indent == 0) {
+                                                        ebl_env_buffer=0
+
+                                                        print_buffer(env_buffer, cnt_env_buffer)
+
+                                                        cnt_env_buffer=0
+                                                }
                                         }
                                 }
+                        } else {
+                                printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
+                                
+                                if (ebl_env_buffer) env_buffer[cnt_env_buffer++]=$0
                         }
-                } else {
-                        printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
-                        
-                        if (ebl_env_buffer) env_buffer[cnt_env_buffer++]=$0
                 }
         }
         if (cnt_empty_lines > 0) cnt_empty_lines=0
