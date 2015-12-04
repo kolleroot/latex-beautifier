@@ -35,8 +35,8 @@ if [ $# -eq 0 ]; then
 else
         latex_files=""
         cnt_latex_files=0
-        use_env_buffer="false"
-        dlt_empty_lines="false"
+        use_env_buffer=0
+        dlt_empty_lines=0
         prv_empty_lines=0
 
         while getopts ":f:bp:h" opt $*; do
@@ -46,11 +46,11 @@ else
                                 let "cnt_latex_files+=1"
                                 ;;
                         b)
-                                use_env_buffer="true"
+                                use_env_buffer=1
                                 ;;
                         p)
                                 if numeric "$OPTARG"; then
-                                        dlt_empty_lines="true"
+                                        dlt_empty_lines=1
                                         prv_empty_lines=$OPTARG
                                 else
                                         echo "use numeric value for -p option!" >&2

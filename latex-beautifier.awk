@@ -24,33 +24,19 @@ function trim(s)
 ###############################################################################
 function filter_sec(line)
 {
-        if (match(plain_line, /^\\part/)) {
-                return "part"
-        }
+        if (match(plain_line, /^\\part/)) return "part"
         
-        if (match(plain_line, /^\\chapter/)) {
-                return "chapter"
-        }
+        if (match(plain_line, /^\\chapter/)) return "chapter"
         
-        if (match(plain_line, /^\\section/)) {
-                return "section"
-        }
+        if (match(plain_line, /^\\section/)) return "section"
         
-        if (match(plain_line, /^\\subsection/)) {
-                return "subsection"
-        }
+        if (match(plain_line, /^\\subsection/)) return "subsection"
         
-        if (match(plain_line, /^\\subsubsection/)) {
-                return "subsubsection"
-        }
+        if (match(plain_line, /^\\subsubsection/)) return "subsubsection"
         
-        if (match(plain_line, /^\\paragraph/)) {
-                return "paragraph"
-        }
+        if (match(plain_line, /^\\paragraph/)) return "paragraph"
         
-        if (match(plain_line, /^\\subparagraph/)) {
-                return "subparagraph"
-        }
+        if (match(plain_line, /^\\subparagraph/)) return "subparagraph"
 
         return "-"
 }
@@ -60,13 +46,9 @@ function filter_sec(line)
 ###############################################################################
 function filter_env(line)
 {
-        if (match(plain_line, /^\\begin/)) {
-                return "begin"
-        }
+        if (match(plain_line, /^\\begin/)) return "begin"
 
-        if (match(plain_line, /^\\end/)) {
-                return "end"
-        }
+        if (match(plain_line, /^\\end/)) return "end"
 
         return "-"
 }
@@ -78,12 +60,11 @@ function create_tabs(n)
 {
         if (n > 0) {
                 tabs=""
-                for (i=0; i<n; i++) {
-                       tabs=tabs "\t" 
-                }
+                for (i=0; i<n; i++)
+                        tabs=tabs "\t"
+
                 return tabs
-        }
-        else {
+        } else {
                 return ""
         }
 }
@@ -95,9 +76,9 @@ function print_buffer(buffer, len)
 {
         print("%===============================================================================")
 
-        for (i=0; i<len; i++) {
+        for (i=0; i<len; i++)
                 print("%" buffer[i])
-        }
+
         print("%===============================================================================")
 }
 
@@ -112,7 +93,7 @@ BEGIN {
 
         env_buffer[0]=""
         cnt_env_buffer=0
-        ebl_env_buffer="false"
+        ebl_env_buffer=0
         use_env_buffer=_use_env_buffer
 
         cnt_empty_lines=0
@@ -151,8 +132,8 @@ plain_line ~ /^\\.+/ {
                                 cur_env_indent+=env_indent
                                 cur_abs_indent=(cur_sec_indent + cur_env_indent)
 
-                                if (use_env_buffer == "true") {
-                                        ebl_env_buffer="true"
+                                if (use_env_buffer) {
+                                        ebl_env_buffer=1
 
                                         env_buffer[cnt_env_buffer++]=$0
                                 }
@@ -162,11 +143,11 @@ plain_line ~ /^\\.+/ {
 
                                 printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
 
-                                if (use_env_buffer == "true") {
+                                if (use_env_buffer) {
                                         env_buffer[cnt_env_buffer++]=$0
 
                                         if (cur_env_indent == 0) {
-                                                ebl_env_buffer="false"
+                                                ebl_env_buffer=0
 
                                                 print_buffer(env_buffer, cnt_env_buffer)
 
@@ -177,32 +158,25 @@ plain_line ~ /^\\.+/ {
                 } else {
                         printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
                         
-                        if (ebl_env_buffer == "true") {
-                                env_buffer[cnt_env_buffer++]=$0
-                        }
+                        if (ebl_env_buffer) env_buffer[cnt_env_buffer++]=$0
                 }
         }
-        if (cnt_empty_lines > 0) {
-                cnt_empty_lines=0
-        }
+        if (cnt_empty_lines > 0) cnt_empty_lines=0
+
         next
 }
 
-ebl_env_buffer == "true" {
+ebl_env_buffer {
         env_buffer[cnt_env_buffer++]=$0
 }
 
-dlt_empty_lines == "true" {
+dlt_empty_lines {
         if (length(plain_line) == 0) {
                 cnt_empty_lines+=1
 
-                if (cnt_empty_lines > prv_empty_lines) {
-                        next
-                }
+                if (cnt_empty_lines > prv_empty_lines) next
         } else {
-                if (cnt_empty_lines > 0) {
-                        cnt_empty_lines=0
-                }
+                if (cnt_empty_lines > 0) cnt_empty_lines=0
         }
 }
 
