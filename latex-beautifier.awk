@@ -24,19 +24,19 @@ function trim(s)
 ###############################################################################
 function filter_sec(line)
 {
-        if (match(plain_line, /^\\part/)) return "part"
+        if (match(line, /^\\part/)) return "part"
         
-        if (match(plain_line, /^\\chapter/)) return "chapter"
+        if (match(line, /^\\chapter/)) return "chapter"
         
-        if (match(plain_line, /^\\section/)) return "section"
+        if (match(line, /^\\section/)) return "section"
         
-        if (match(plain_line, /^\\subsection/)) return "subsection"
+        if (match(line, /^\\subsection/)) return "subsection"
         
-        if (match(plain_line, /^\\subsubsection/)) return "subsubsection"
+        if (match(line, /^\\subsubsection/)) return "subsubsection"
         
-        if (match(plain_line, /^\\paragraph/)) return "paragraph"
+        if (match(line, /^\\paragraph/)) return "paragraph"
         
-        if (match(plain_line, /^\\subparagraph/)) return "subparagraph"
+        if (match(line, /^\\subparagraph/)) return "subparagraph"
 
         return "-"
 }
@@ -46,9 +46,9 @@ function filter_sec(line)
 ###############################################################################
 function filter_env(line)
 {
-        if (match(plain_line, /^\\begin/)) return "begin"
+        if (match(line, /^\\begin/)) return "begin"
 
-        if (match(plain_line, /^\\end/)) return "end"
+        if (match(line, /^\\end/)) return "end"
 
         return "-"
 }
