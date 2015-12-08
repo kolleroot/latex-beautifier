@@ -3,7 +3,7 @@
 function print_help
 {
         echo "USAGE:"
-        echo "  ./latex-beautifier -f LATEX-FILE [-f LATEX-FILE]... [-b] [-p N] | -h"
+        echo "  ./latex-beautifier -f LATEX-FILE [-f LATEX-FILE]... [-b] [-p N] [-s]| -h"
         echo "OPTIONS:"
         echo "  -f LATEX-FILE               latex file which should be formatted"
         echo "  -b                          make backup for environment blocks"

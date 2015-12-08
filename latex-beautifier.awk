@@ -134,6 +134,9 @@ plain_line ~ /^\\.+/ {
         if (cnt_empty_lines > 0) cnt_empty_lines=0
 
         if (!shallow_formatting) {
+                # if shallow-formatting is disabled use indents to format
+                # latex-documents
+
                 cur_sec=filter_sec(plain_line)
 
                 if (cur_sec != "-") {
@@ -237,5 +240,3 @@ dlt_empty_lines {
 }
 
 END {
-
-}
