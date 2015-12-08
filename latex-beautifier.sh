@@ -8,6 +8,7 @@ function print_help
         echo "  -f LATEX-FILE               latex file which should be formatted"
         echo "  -b                          make backup for environment blocks"
         echo "  -p N                        number of spaces that should be preserved"
+        echo "  -s                          use shallow formatting (no indents, except environments!) "
         echo "  -h                          print the help text"
         echo "ARGUMENTS:"
         echo "  LATEX-FILE                  file with .tex ending"
@@ -38,8 +39,9 @@ else
         use_env_buffer=0
         dlt_empty_lines=0
         prv_empty_lines=0
+        shallow_formatting=0
 
-        while getopts ":f:bp:h" opt $*; do
+        while getopts ":f:bp:sh" opt $*; do
                 case $opt in
                         f)
                                 latex_files="$latex_files $OPTARG"
@@ -56,6 +58,9 @@ else
                                         echo "use numeric value for -p option!" >&2
                                         exit 1
                                 fi
+                                ;;
+                        s)
+                                shallow_formatting=1
                                 ;;
                         h)
                                 print_help
@@ -81,6 +86,7 @@ else
                                 cat "$latex_files" | awk -v _use_env_buffer=$use_env_buffer \
                                         -v _dlt_empty_lines=$dlt_empty_lines \
                                         -v _prv_empty_lines=$prv_empty_lines \
+                                        -v _shallow_formatting=$shallow_formatting \
                                         -f "$source_dir/latex-beautifier.awk"
                         fi
                 else
@@ -96,6 +102,7 @@ else
                                                         cat "${file}.bak" | awk -v _use_env_buffer=$use_env_buffer \
                                                                 -v _dlt_empty_lines=$dlt_empty_lines \
                                                                 -v _prv_empty_lines=$prv_empty_lines \
+                                                                -v _shallow_formatting=$shallow_formatting \
                                                                 -f "$source_dir/latex-beautifier.awk" > "$file"
                                                 fi
                                         } &

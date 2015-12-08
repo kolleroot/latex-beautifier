@@ -106,6 +106,8 @@ BEGIN {
         prv_empty_lines=_prv_empty_lines
         dlt_empty_lines=_dlt_empty_lines
 
+        shallow_formatting=_shallow_formatting
+
         abs_sec_indents["part"]=0
         abs_sec_indents["chapter"]=0
         abs_sec_indents["section"]=1
@@ -125,73 +127,102 @@ BEGIN {
 }
 
 plain_line ~ /^\\.+/ {
-        cur_sec=filter_sec(plain_line)
+        # this block will only be executed if the current line starts with a
+        # backslash
 
-        if (cur_sec != "-") {
-                if (cur_par_indent > 0) cur_par_indent=0
+        # reset counter as soon as the current line isn't empty
+        if (cnt_empty_lines > 0) cnt_empty_lines=0
 
-                cur_sec_indent=abs_sec_indents[cur_sec]
-                cur_abs_indent=(cur_sec_indent + cur_par_indent + cur_rel_env_indent)
+        if (!shallow_formatting) {
+                cur_sec=filter_sec(plain_line)
 
-                printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
-        } else {
+                if (cur_sec != "-") {
+                        # current line is some sort of section. For instance \chapter,
+                        # \section, \subsection etc.
+                        if (cur_par_indent > 0) cur_par_indent=0
+
+                        cur_sec_indent=abs_sec_indents[cur_sec]
+                        cur_abs_indent=(cur_sec_indent + cur_par_indent + cur_rel_env_indent)
+
+                        printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
+                        next
+                }
+
                 cur_par=filter_par(plain_line)
 
                 if (cur_par != "-") {
+                        # current line is a [sub]paragraph
                         cur_par_indent=rel_par_indents[cur_par]
                         cur_abs_indent=(cur_sec_indent + cur_par_indent + cur_rel_env_indent)
 
                         printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
-                } else {
-                        cur_env=filter_env(plain_line)
-
-                        if (cur_env != "-") {
-                                if (cur_env == "begin") {
-                                        printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
-
-                                        cur_rel_env_indent+=rel_env_indent
-                                        cur_abs_indent=(cur_sec_indent + cur_par_indent + cur_rel_env_indent)
-
-                                        if (use_env_buffer) {
-                                                ebl_env_buffer=1
-
-                                                env_buffer[cnt_env_buffer++]=$0
-                                        }
-                                } else {
-                                        cur_rel_env_indent-=rel_env_indent
-                                        cur_abs_indent=(cur_sec_indent + cur_par_indent + cur_rel_env_indent)
-
-                                        printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
-
-                                        if (use_env_buffer) {
-                                                env_buffer[cnt_env_buffer++]=$0
-
-                                                if (cur_rel_env_indent == 0) {
-                                                        ebl_env_buffer=0
-
-                                                        print_buffer(env_buffer, cnt_env_buffer)
-
-                                                        cnt_env_buffer=0
-                                                }
-                                        }
-                                }
-                        } else {
-                                printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
-                                
-                                if (ebl_env_buffer) env_buffer[cnt_env_buffer++]=$0
-                        }
+                        next
                 }
         }
-        if (cnt_empty_lines > 0) cnt_empty_lines=0
+
+        cur_env=filter_env(plain_line)
+
+        if (cur_env != "-") {
+                if (cur_env == "begin") {
+                        # current line is the beginning of an environment
+                        printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
+                        
+                        # environments can be nested, hence add for each
+                        # environment a further indent
+                        cur_rel_env_indent+=rel_env_indent
+                        cur_abs_indent=(cur_sec_indent + cur_par_indent + cur_rel_env_indent)
+
+                        if (use_env_buffer) {
+                                # store the following lines into a buffer
+                                # whenever buffer-usage is enabled
+                                ebl_env_buffer=1
+
+                                env_buffer[cnt_env_buffer++]=$0
+                        }
+                } else {
+                        # current line is the end of an environment
+
+                        # due to \end the environment will be closed, thus
+                        # remove the (another) indent
+                        cur_rel_env_indent-=rel_env_indent
+                        cur_abs_indent=(cur_sec_indent + cur_par_indent + cur_rel_env_indent)
+
+                        printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
+
+                        if (use_env_buffer) {
+                                # store this line into the buffer and disable
+                                # the further use of it
+                                env_buffer[cnt_env_buffer++]=$0
+
+                                if (cur_rel_env_indent == 0) {
+                                        cnt_env_buffer=0
+                                        ebl_env_buffer=0
+
+                                        print_buffer(env_buffer, cnt_env_buffer)
+                                }
+                        }
+                }
+                next
+        }
+
+        printf("%s%s\n", create_tabs(cur_abs_indent), plain_line)
+        
+        # this code-line is very important, because within an environment the
+        # lines can start with a backslash as well. For example \centering
+        if (ebl_env_buffer) env_buffer[cnt_env_buffer++]=$0
 
         next
 }
 
 ebl_env_buffer {
+        # if buffer is temporarily enabled store the lines in it
         env_buffer[cnt_env_buffer++]=$0
 }
 
 dlt_empty_lines {
+        # this block will only be executed if the user enabled the removal of
+        # redundant empty lines. Furthermore he can define the maximum number of
+        # empty lines the program should preserve
         if (length(plain_line) == 0) {
                 cnt_empty_lines+=1
 
